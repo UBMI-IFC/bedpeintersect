@@ -62,11 +62,13 @@ if __name__ == '__main__':
     outbedpe = 'annotated_' + bedpefile.name
     outtable = 'table_' + bedpefile.name
 
-    # metl bedpe
+    # metl
+    print('[INFO] Processing bedpee file')
     melt_tag_beddpee(bedpefile, bedpemeltfile)
     melted = BedTool(bedpemeltfile)
 
     # Intersect
+    print('[INFO] Intersect bed files')
     bednames = [bed.fn.split('/')[-1] for bed in beds]
     intersect = melted.intersect([bed.fn for bed in beds],
                                  filenames=True,
@@ -83,7 +85,8 @@ if __name__ == '__main__':
     ranges = df_inter[['chr', 'init', 'end']].iloc[::2]
     df = ranges.join(df)
 
-    # closest gene
+    # closest
+    print('[INFO] Search closest features')
     melt_sorted = melted.sort()
     closegene = melt_sorted.closest('genes_chr_sorted.gtf.gz', d=True, t='first')
     closeexon = melt_sorted.closest('exon_chr_sorted.gtf.gz', d=True, t='first')
@@ -96,6 +99,7 @@ if __name__ == '__main__':
     df['dist'] = np.nan
     df['region'] = np.nan
 
+    print('[INFO] Creating descriptive table.')
     condits = [0,0,0]
     for i, (gene, part) in enumerate(zip(closegene, closeexon)):
         fields = gene.fields
@@ -147,6 +151,7 @@ if __name__ == '__main__':
                 df.loc[gene.name, 'region'] = 'intron'
 
     # Write bedpee file
+    print('[INFO] Creating annotated bedpe')
     with open(outbedpe, 'w') as outbedpe:
         outbedpe.write('# Bed files order for both anchors\n')
         outbedpe.write('# ' + '\t'.join(bednames) + '\n')
@@ -167,3 +172,5 @@ if __name__ == '__main__':
 
     # Write table
     df.to_csv(outtable, sep='\t')
+
+    print('[END]')
