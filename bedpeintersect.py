@@ -13,12 +13,14 @@ biotype = re.compile(r'gene_biotype "(?P<biotipye>.*?)"')
 geneid = re.compile(r'gene_id "(?P<geneid>.*?)"')
 exonnumber = re.compile(r'exon_number "(?P<exonnumber>.*?)"')
 
-def argumetns():
+def arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument('bedpefile',
                         help='HiC bedpe contact file')
     parser.add_argument('bedsfolder',
                         help='Folder with bed files to intersect')
+    # parser.add_argument('-o', '--output-pedpename')
+    # parser.add_argument('-O', '--output-tablename')
     return parser.parse_args()
 
 def melt_tag_beddpee(bedpefile, outfile=None):
@@ -48,22 +50,29 @@ def melt_tag_beddpee(bedpefile, outfile=None):
 
 
 if __name__ == '__main__':
+    # Arguments
+    args = arguments()
     # input files
-    bedpefile = 'P046T_neoloops_095_mres.bed'
-    bedpemeltfile = 'melt_' + bedpefile
-    bedspath = Path('./beds')
+    bedpefile = Path(args.bedpefile)
+    bedspath = Path(args.bedsfolder)
     bedfiles = list(bedspath.rglob('*.bed'))
     beds = [BedTool(f) for f in bedfiles]
+    # output files
+    bedpemeltfile = 'melt_' + bedpefile.name
+    outbedpe = 'annotated_' + bedpefile.name
+    outtable = 'table_' + bedpefile.name
 
     # metl bedpe
     melt_tag_beddpee(bedpefile, bedpemeltfile)
     melted = BedTool(bedpemeltfile)
 
     # Intersect
+    bednames = [bed.fn.split('/')[-1] for bed in beds]
     intersect = melted.intersect([bed.fn for bed in beds],
                                  filenames=True,
                                  wa=True,
-                                 C=True)
+                                 C=True,
+                                 names=bednames)
 
     # Create df
     df_inter = pd.read_table(intersect.fn,
@@ -80,7 +89,6 @@ if __name__ == '__main__':
     closeexon = melt_sorted.closest('exon_chr_sorted.gtf.gz', d=True, t='first')
     closeexoncomplete = melt_sorted.closest('exon_chr_sorted.gtf.gz', d=True, t='all')
     assert len(closegene) == len(closeexon), 'Annotation intersection wrong sizes'
-
 
     df['gene name'] = np.nan
     df['gene id'] = np.nan
@@ -139,7 +147,9 @@ if __name__ == '__main__':
                 df.loc[gene.name, 'region'] = 'intron'
 
     # Write bedpee file
-    with open('pru.bedpe', 'w') as outbedpe:
+    with open(outbedpe, 'w') as outbedpe:
+        outbedpe.write('# Bed files order for both anchors\n')
+        outbedpe.write('# ' + '\t'.join(bednames) + '\n')
         for i in range(len(df)):
             if i % 2 == 0:
                 contcta = [str(j) for j in df.iloc[i]]
@@ -154,3 +164,6 @@ if __name__ == '__main__':
                 line += '\t'.join(contcta[3:3+lenbeds]) + '\t'
                 line += '\t'.join(contctb[3:3+lenbeds]) + '\n'
                 outbedpe.write(line)
+
+    # Write table
+    df.to_csv(outtable, sep='\t')
