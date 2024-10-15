@@ -50,6 +50,10 @@ def melt_tag_beddpee(bedpefile, outfile=None):
 
 
 if __name__ == '__main__':
+    # Annotation files
+    scriptfile = Path(__file__)
+    genesgtf = scriptfile.parent/'genes_chr_sorted.gtf.gz'
+    exonsgtf = scriptfile.parent/'exon_chr_sorted.gtf.gz'
     # Arguments
     args = arguments()
     # input files
@@ -86,20 +90,20 @@ if __name__ == '__main__':
     df = ranges.join(df)
 
     # closest
-    print('[INFO] Search closest features')
+    print('[INFO] Searching for closest features')
     melt_sorted = melted.sort()
-    closegene = melt_sorted.closest('genes_chr_sorted.gtf.gz', d=True, t='first')
-    closeexon = melt_sorted.closest('exon_chr_sorted.gtf.gz', d=True, t='first')
-    closeexoncomplete = melt_sorted.closest('exon_chr_sorted.gtf.gz', d=True, t='all')
+    closegene = melt_sorted.closest(str(genesgtf), d=True, t='first')
+    closeexon = melt_sorted.closest(str(exonsgtf), d=True, t='first')
+    closeexoncomplete = melt_sorted.closest(str(exonsgtf), d=True, t='all')
     assert len(closegene) == len(closeexon), 'Annotation intersection wrong sizes'
 
-    df['gene name'] = np.nan
-    df['gene id'] = np.nan
-    df['gene biotype'] = np.nan
+    df['gene name'] = ""
+    df['gene id'] = ""
+    df['gene biotype'] = ""
     df['dist'] = np.nan
-    df['region'] = np.nan
+    df['region'] = ""
 
-    print('[INFO] Creating descriptive table.')
+    print('[INFO] Creating descriptive table')
     condits = [0,0,0]
     for i, (gene, part) in enumerate(zip(closegene, closeexon)):
         fields = gene.fields
