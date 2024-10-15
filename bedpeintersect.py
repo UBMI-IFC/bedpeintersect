@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+"""Program for multiple bed intersection of both anchors in a bedpe file."""
+
 import argparse
 import re
 from sys import stdout
@@ -8,7 +10,7 @@ import pandas as pd
 import numpy as np
 from pybedtools import BedTool
 
-genename =  re.compile(r'gene_name "(?P<gene>.*?)"')
+genename = re.compile(r'gene_name "(?P<gene>.*?)"')
 biotype = re.compile(r'gene_biotype "(?P<biotipye>.*?)"')
 geneid = re.compile(r'gene_id "(?P<geneid>.*?)"')
 exonnumber = re.compile(r'exon_number "(?P<exonnumber>.*?)"')
@@ -46,7 +48,6 @@ def melt_tag_beddpee(bedpefile, outfile=None):
             output.write(b)      # b contact
             # add to counter
             countname += 1
-
 
 
 if __name__ == '__main__':
