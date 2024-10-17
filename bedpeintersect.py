@@ -15,14 +15,18 @@ biotype = re.compile(r'gene_biotype "(?P<biotipye>.*?)"')
 geneid = re.compile(r'gene_id "(?P<geneid>.*?)"')
 exonnumber = re.compile(r'exon_number "(?P<exonnumber>.*?)"')
 
-def arguments():
+def arguments(return_parser=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('bedpefile',
                         help='HiC bedpe contact file')
     parser.add_argument('bedsfolder',
                         help='Folder with bed files to intersect')
+    parser.add_argument('-g', '--genome', default='GRCh38',
+                        help='Genome to get annotation, currentrly GRCh38, GRCm39 ')
     # parser.add_argument('-o', '--output-pedpename')
     # parser.add_argument('-O', '--output-tablename')
+    if return_parser:
+        return parser
     return parser.parse_args()
 
 def melt_tag_beddpee(bedpefile, outfile=None):
@@ -51,12 +55,12 @@ def melt_tag_beddpee(bedpefile, outfile=None):
 
 
 if __name__ == '__main__':
-    # Annotation files
-    scriptfile = Path(__file__)
-    genesgtf = scriptfile.parent/'genes_chr_sorted.gtf.gz'
-    exonsgtf = scriptfile.parent/'exon_chr_sorted.gtf.gz'
     # Arguments
     args = arguments()
+    # Annotation files
+    scriptfile = Path(__file__)
+    genesgtf = scriptfile.parent/args.genome/'genes_chr_sorted.gtf.gz'
+    exonsgtf = scriptfile.parent/args.genome/'exon_chr_sorted.gtf.gz'
     # input files
     bedpefile = Path(args.bedpefile)
     bedspath = Path(args.bedsfolder)
@@ -111,20 +115,27 @@ if __name__ == '__main__':
         partfields = part.fields
         attr = fields[-2]
         attrpart = partfields[-2]
-        distance = int(fields[-1])
-        partdistance = int(partfields[-1])
-        gn = genename.findall(attr)
-        gnp = genename.findall(attrpart)
-        gi = geneid.findall(attr)
-        gip = geneid.findall(attrpart)
-        parttype = attrpart[6]
-        gb = biotype.findall(attr)
-        gbp = biotype.findall(attrpart)
+        if attr == '.' or attr == '':
+            df.loc[gene.name, 'gene name'] = '.'
+            df.loc[gene.name, 'gene id'] = '.'
+            df.loc[gene.name, 'gene biotype'] = '.'
+            df.loc[gene.name, 'dist'] = -1
+            assert False, "Posible error in annotation used!!!"
+        else:
+            distance = int(fields[-1])
+            partdistance = int(partfields[-1])
+            gn = genename.findall(attr)
+            gnp = genename.findall(attrpart)
+            gi = geneid.findall(attr)
+            gip = geneid.findall(attrpart)
+            # parttype = attrpart[6]
+            gb = biotype.findall(attr)
+            gbp = biotype.findall(attrpart)
 
-        df.loc[gene.name, 'gene name'] = gn[0]
-        df.loc[gene.name, 'gene id'] = gi[0]
-        df.loc[gene.name, 'gene biotype'] = gb[0]
-        df.loc[gene.name, 'dist'] = distance
+            df.loc[gene.name, 'gene name'] = gn[0]
+            df.loc[gene.name, 'gene id'] = gi[0]
+            df.loc[gene.name, 'gene biotype'] = gb[0]
+            df.loc[gene.name, 'dist'] = distance
 
         # The following code for gene region specification
         # is likely inestable. Mean reasons
