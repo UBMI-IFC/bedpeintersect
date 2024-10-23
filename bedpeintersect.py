@@ -91,7 +91,7 @@ if __name__ == '__main__':
                                     'counts'],
                              index_col=3)
     df = df_inter.pivot(columns=['filename'], values='counts')
-    ranges = df_inter[['chr', 'init', 'end']].iloc[::2]
+    ranges = df_inter[['chr', 'init', 'end']].iloc[::len(beds)]
     df = ranges.join(df)
 
     # closest
